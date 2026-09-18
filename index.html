@@ -95,7 +95,31 @@ nav a:hover:after{transform:scaleX(1)}
 .case-carousel .video-wrap{aspect-ratio:9/16;overflow:hidden;border-radius:16px;background:#050506;}
 .case-carousel .video-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
 @media(min-width:801px){.case-carousel .native-card{flex-basis:250px;}}
-</style><script>(function(){try{if(localStorage.getItem("fawziko-theme")==="light")document.documentElement.classList.add("prelight")}catch(e){}})();</script></head>
+</style><script>(function(){try{if(localStorage.getItem("fawziko-theme")==="light")document.documentElement.classList.add("prelight")}catch(e){}})();</script>
+<style id="video-thumbnail-styles">
+.video-thumb{
+  position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
+  background:#050506;cursor:pointer;overflow:hidden;
+}
+.video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.video-thumb:after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.30));
+}
+.video-thumb-play{
+  position:absolute;z-index:2;width:58px;height:58px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.55);background:rgba(0,0,0,.58);
+  backdrop-filter:blur(8px);display:grid;place-items:center;color:#fff;
+  font:700 22px/1 Arial,sans-serif;padding-left:3px;
+  box-shadow:0 10px 35px rgba(0,0,0,.35);transition:.2s ease;
+}
+.video-thumb:hover .video-thumb-play{transform:scale(1.06);border-color:#fff}
+.video-thumb.is-hidden{opacity:0;pointer-events:none;transition:opacity .22s ease}
+.video-thumb.is-fallback{
+  background:radial-gradient(circle at 50% 45%,var(--brand-soft),transparent 45%),#09090c;
+}
+</style>
+</head>
 <body>
 <button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark mode"><span class="theme-icon" id="themeIcon">☼</span></button>
 <div class="float-stack"><div class="float-pill"><span class="float-dot"></span><b>AVAILABLE FOR PROJECTS</b></div><div class="float-pill">2 YEARS EXPERIENCE</div></div><a class="float-contact" href="#contact" aria-label="Contact">CONTACT</a><div class="scroll-orbit"><span>SCROLL<br>EXPLORE</span></div>
@@ -225,4 +249,66 @@ nav a:hover:after{transform:scaleX(1)}
 })();
 </script>
 <!-- Videos: MOV is the primary format; MP4 is supported as fallback. -->
+
+<script id="video-thumbnails">
+(function(){
+  function addThumb(video){
+    if(video.dataset.thumbReady) return;
+    video.dataset.thumbReady="1";
+    const wrap=video.closest(".video-wrap") || video.parentElement;
+    if(!wrap) return;
+    if(getComputedStyle(wrap).position==="static") wrap.style.position="relative";
+
+    const thumb=document.createElement("div");
+    thumb.className="video-thumb";
+    thumb.setAttribute("aria-label","Play video");
+    const play=document.createElement("div");
+    play.className="video-thumb-play";
+    play.textContent="▶";
+    thumb.appendChild(play);
+    wrap.appendChild(thumb);
+
+    let captured=false;
+    const showFallback=()=>thumb.classList.add("is-fallback");
+
+    function capture(){
+      if(captured || !video.videoWidth || !video.videoHeight) return;
+      try{
+        const canvas=document.createElement("canvas");
+        const max=720, scale=Math.min(1,max/video.videoWidth);
+        canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
+        canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+        const ctx=canvas.getContext("2d");
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        const img=document.createElement("img");
+        img.alt="";
+        img.src=canvas.toDataURL("image/jpeg",.82);
+        thumb.insertBefore(img,play);
+        captured=true;
+        thumb.classList.remove("is-fallback");
+      }catch(e){ showFallback(); }
+    }
+
+    video.addEventListener("loadeddata",capture,{once:true});
+    video.addEventListener("canplay",capture,{once:true});
+    video.addEventListener("play",()=>thumb.classList.add("is-hidden"));
+    video.addEventListener("pause",()=>{
+      if(video.currentTime===0 || video.ended===false) thumb.classList.add("is-hidden");
+    });
+    video.addEventListener("ended",()=>thumb.classList.remove("is-hidden"));
+    thumb.addEventListener("click",()=>{
+      thumb.classList.add("is-hidden");
+      const r=video.play();
+      if(r && r.catch) r.catch(()=>thumb.classList.remove("is-hidden"));
+    });
+    showFallback();
+  }
+
+  function init(){
+    document.querySelectorAll("video").forEach(addThumb);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
+</script>
 </body></html>
