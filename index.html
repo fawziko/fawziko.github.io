@@ -789,7 +789,7 @@ body.light .service{
   </div>
   <div class="media-stage vertical-stage">
     <div class="case-carousel auto-carousel" data-carousel="events">
-      <article class="native-card" style="--brand:#9b7cff"><div class="video-wrap"><div class="vimeo-wrap" data-vimeo-id="YOUR_VIMEO_ID_10" data-video-name="event-coverage" aria-label="EVENT COVERAGE"><div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Replace YOUR_VIMEO_ID_10 with the Vimeo video ID</small></div></div></div><div class="card-meta"><b>EVENT COVERAGE 01</b><span>EVENT HIGHLIGHTS</span></div></article>
+      <article class="native-card" style="--brand:#9b7cff"><div class="video-wrap"><div class="vimeo-wrap" data-vimeo-id="1228373177" data-video-name="event-coverage" aria-label="EVENT COVERAGE"><iframe src="https://player.vimeo.com/video/1228373177?badge=0&amp;autopause=0&amp;dnt=1&amp;title=0&amp;byline=0&amp;portrait=0&amp;playsinline=1&amp;player_id=0&amp;app_id=58479" title="@fawzy.ko_projects_reels_20260917_224710" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="eager"></iframe></div></div><div class="card-meta"><b>EVENT COVERAGE 01</b><span>EVENT HIGHLIGHTS</span></div></article>
       <article class="native-card" style="--brand:#9b7cff"><div class="video-wrap"><div class="vimeo-wrap" data-vimeo-id="YOUR_VIMEO_ID_11" data-video-name="events-02" aria-label="EVENT COVERAGE"><div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Replace YOUR_VIMEO_ID_11 with the Vimeo video ID</small></div></div></div><div class="card-meta"><b>EVENT COVERAGE 02</b><span>SOCIAL COVERAGE</span></div></article>
       <article class="native-card" style="--brand:#9b7cff"><div class="video-wrap"><div class="vimeo-wrap" data-vimeo-id="YOUR_VIMEO_ID_12" data-video-name="events-03" aria-label="EVENT COVERAGE"><div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Replace YOUR_VIMEO_ID_12 with the Vimeo video ID</small></div></div></div><div class="card-meta"><b>EVENT COVERAGE 03</b><span>EVENT MOMENTS</span></div></article>
     </div>
@@ -813,6 +813,20 @@ body.light .service{
  btn.addEventListener('click',()=>apply(document.body.classList.contains('light')?'dark':'light'));
 })();
 </script>
+
+<style id="smooth-carousel-fix">
+/* ZERO-STOP CAROUSEL: continuous movement, no forced snap between cards */
+.brand-carousel,.case-carousel{
+  scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+  -webkit-scroll-snap-type:none !important;
+  overscroll-behavior-x:contain;
+}
+.brand-carousel .native-card,.case-carousel .native-card{
+  scroll-snap-align:none !important;
+}
+</style>
+
 <!-- Vimeo playback: upload videos to Vimeo, then replace the Vimeo IDs below. -->
 
 <script>
@@ -822,25 +836,28 @@ body.light .service{
     const original=[...el.querySelectorAll('.native-card')];
     if(!original.length) return;
 
-    // Seamless duplicate set.
+    // Duplicate the cards once so the loop can run continuously.
     original.forEach(card=>el.appendChild(card.cloneNode(true)));
 
-    let down=false, startX=0, startScroll=0, paused=false, videoPlaying=false, raf=0, last=performance.now();
+    let down=false, startX=0, startScroll=0, paused=false, videoPlaying=false, raf=0;
+    let last=performance.now();
+    const speed=0.030; // px per ms = 30px/sec
     const gap=()=>parseFloat(getComputedStyle(el).gap||0);
     const setSize=()=>original.reduce((sum,c)=>sum+c.getBoundingClientRect().width+gap(),0);
 
     function normalize(){
       const half=setSize();
       if(!half) return;
-      if(el.scrollLeft>=half) el.scrollLeft-=half;
-      if(el.scrollLeft<0) el.scrollLeft+=half;
+      // Keep the loop mathematically continuous. No scrollTo/scroll snap animation.
+      if(el.scrollLeft >= half) el.scrollLeft -= half;
+      else if(el.scrollLeft < 0) el.scrollLeft += half;
     }
 
     function tick(now){
-      const dt=Math.min(32,now-last); last=now;
-      if(!paused && !videoPlaying && el.dataset.vimeoPlaying!=='1' && !document.hidden && el.scrollWidth>el.clientWidth){
-        // Very slow floating movement. Videos are NEVER paused by the carousel.
-        el.scrollLeft += dt*0.030;
+      const dt=Math.min(32,now-last);
+      last=now;
+      if(!down && !paused && !videoPlaying && el.dataset.vimeoPlaying!=='1' && !document.hidden && el.scrollWidth>el.clientWidth){
+        el.scrollLeft += dt*speed;
         normalize();
       }
       raf=requestAnimationFrame(tick);
@@ -849,7 +866,8 @@ body.light .service{
     el.addEventListener('pointerdown',e=>{
       if(e.pointerType==='mouse' && e.button!==0) return;
       down=true; paused=true;
-      startX=e.clientX; startScroll=el.scrollLeft;
+      startX=e.clientX;
+      startScroll=el.scrollLeft;
       el.setPointerCapture?.(e.pointerId);
       el.style.scrollBehavior='auto';
     });
@@ -863,22 +881,22 @@ body.light .service{
     const end=()=>{
       if(!down) return;
       down=false;
-      // Resume gently after the finger/mouse is released.
-      setTimeout(()=>{paused=false;},180);
+      // No forced snap after release. Native touch momentum stays smooth.
+      clearTimeout(el._resume);
+      el._resume=setTimeout(()=>{
+        if(!videoPlaying) paused=false;
+      },80);
     };
     el.addEventListener('pointerup',end);
     el.addEventListener('pointercancel',end);
 
-    // Wheel/trackpad temporarily hands control to the user.
     el.addEventListener('wheel',()=>{
       paused=true;
       clearTimeout(el._resume);
-      el._resume=setTimeout(()=>{if(!videoPlaying) paused=false;},500);
+      el._resume=setTimeout(()=>{if(!videoPlaying) paused=false;},350);
     },{passive:true});
 
-    // Keep the active video completely stable while it is playing.
-    // Safari/iOS can suspend or interrupt inline media when its scroll position
-    // keeps changing. We pause the FLOATING motion, never the video itself.
+    // Never pause a video because the carousel moves. Only pause the carousel motion.
     el.querySelectorAll('video').forEach(video=>{
       video.addEventListener('play',()=>{
         videoPlaying=true;
@@ -887,16 +905,15 @@ body.light .service{
       const resumeMotion=()=>{
         const anyPlaying=[...el.querySelectorAll('video')].some(v=>!v.paused && !v.ended);
         videoPlaying=anyPlaying;
-        if(!anyPlaying) setTimeout(()=>{if(!videoPlaying) paused=false;},180);
+        if(!anyPlaying){
+          clearTimeout(el._resume);
+          el._resume=setTimeout(()=>{if(!videoPlaying) paused=false;},80);
+        }
       };
       video.addEventListener('pause',resumeMotion);
       video.addEventListener('ended',resumeMotion);
     });
 
-    // On desktop, don't stop the carousel just because the pointer is over it.
-
-    // IMPORTANT: no code here calls video.pause().
-    // A video started by the user keeps playing while the cards float left/right.
     window.addEventListener('resize',normalize,{passive:true});
     raf=requestAnimationFrame(tick);
   });
