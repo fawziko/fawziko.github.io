@@ -836,34 +836,21 @@ body.light .service{
 </style>
 
 <style id="vimeo-title-hide-dulingo-kitchow">
-/* Dulingo + Kitchow use the same clean player treatment as the event popups: no Vimeo title/account UI, only a play button. */
+/* Clean Vimeo chromeless presentation. No visual masks: the actual video frame stays untouched. */
 .case[data-brand="dulingo"] .vimeo-wrap,
 .case[data-brand="kitchow"] .vimeo-wrap {
   position:relative;
   isolation:isolate;
   overflow:hidden;
+  background:transparent !important;
 }
-/* Vimeo can still render its own metadata/controls even when title=0 and controls=0.
-   These masks make the portfolio presentation match the Event popups: only our play button is visible. */
-.case[data-brand="dulingo"] .vimeo-wrap::before,
-.case[data-brand="kitchow"] .vimeo-wrap::before {
-  content:"";
-  position:absolute;
-  left:0; right:0; top:0;
-  height:150px;
-  z-index:25;
-  pointer-events:none;
-  background:linear-gradient(to bottom,#050506 0%,#050506 78%,rgba(5,5,6,0) 100%);
-}
-.case[data-brand="dulingo"] .vimeo-wrap::after,
-.case[data-brand="kitchow"] .vimeo-wrap::after {
-  content:"";
-  position:absolute;
-  left:0; right:0; bottom:0;
-  height:72px;
-  z-index:25;
-  pointer-events:none;
-  background:linear-gradient(to top,#050506 0%,#050506 62%,rgba(5,5,6,0) 100%);
+.case[data-brand="dulingo"] .vimeo-wrap iframe,
+.case[data-brand="kitchow"] .vimeo-wrap iframe {
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  background:transparent !important;
 }
 .case[data-brand="dulingo"] .vimeo-wrap .vimeo-play-button,
 .case[data-brand="kitchow"] .vimeo-wrap .vimeo-play-button {
@@ -886,18 +873,14 @@ body.light .service{
 .case[data-brand="kitchow"] .vimeo-wrap .vimeo-play-button::after {
   content:"";
   position:absolute;
-  left:26px;
-  top:21px;
+  left:50%;
+  top:50%;
+  transform:translate(-38%,-50%);
   width:0;
   height:0;
-  border-top:11px solid transparent;
-  border-bottom:11px solid transparent;
-  border-left:16px solid #fff;
-}
-.case[data-brand="dulingo"] .vimeo-wrap .vimeo-play-button:hover,
-.case[data-brand="kitchow"] .vimeo-wrap .vimeo-play-button:hover {
-  transform:translate(-50%,-50%) scale(1.06);
-  background:rgba(5,5,6,.68);
+  border-top:10px solid transparent;
+  border-bottom:10px solid transparent;
+  border-left:15px solid #fff;
 }
 .case[data-brand="dulingo"] .vimeo-wrap.is-playing .vimeo-play-button,
 .case[data-brand="kitchow"] .vimeo-wrap.is-playing .vimeo-play-button {
