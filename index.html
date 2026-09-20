@@ -841,6 +841,29 @@ body.light .service{
 .case[data-brand="kitchow"] .vimeo-wrap {
   position:relative;
   isolation:isolate;
+  overflow:hidden;
+}
+/* Vimeo can still render its own metadata/controls even when title=0 and controls=0.
+   These masks make the portfolio presentation match the Event popups: only our play button is visible. */
+.case[data-brand="dulingo"] .vimeo-wrap::before,
+.case[data-brand="kitchow"] .vimeo-wrap::before {
+  content:"";
+  position:absolute;
+  left:0; right:0; top:0;
+  height:150px;
+  z-index:25;
+  pointer-events:none;
+  background:linear-gradient(to bottom,#050506 0%,#050506 78%,rgba(5,5,6,0) 100%);
+}
+.case[data-brand="dulingo"] .vimeo-wrap::after,
+.case[data-brand="kitchow"] .vimeo-wrap::after {
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:72px;
+  z-index:25;
+  pointer-events:none;
+  background:linear-gradient(to top,#050506 0%,#050506 62%,rgba(5,5,6,0) 100%);
 }
 .case[data-brand="dulingo"] .vimeo-wrap .vimeo-play-button,
 .case[data-brand="kitchow"] .vimeo-wrap .vimeo-play-button {
