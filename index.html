@@ -121,6 +121,52 @@ nav a:hover:after{transform:scaleX(1)}
   background:radial-gradient(circle at 50% 45%,var(--brand-soft),transparent 45%),#09090c;
 }
 </style>
+
+<style id="custom-vimeo-controls">
+.case[data-brand="dulingo"] .vimeo-wrap,
+.case[data-brand="kitchow"] .vimeo-wrap{
+  position:relative;
+  cursor:pointer;
+}
+.case[data-brand="dulingo"] .vimeo-wrap iframe,
+.case[data-brand="kitchow"] .vimeo-wrap iframe{
+  pointer-events:none;
+}
+.vimeo-play-button{
+  position:absolute;
+  z-index:6;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:58px;
+  height:58px;
+  padding:0 0 0 3px;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:50%;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font:700 22px/1 Arial,sans-serif;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 10px 35px rgba(0,0,0,.35);
+  cursor:pointer;
+  transition:opacity .2s ease,transform .2s ease,border-color .2s ease;
+}
+.vimeo-play-button:hover{
+  transform:translate(-50%,-50%) scale(1.07);
+  border-color:#fff;
+}
+.vimeo-play-button.is-hidden{
+  opacity:0;
+  pointer-events:none;
+}
+.vimeo-wrap.is-playing .vimeo-play-button{
+  opacity:0;
+  pointer-events:none;
+}
+</style>
 <style id="vimeo-embed-styles">
 .vimeo-wrap{position:relative;width:100%;height:100%;min-height:0;overflow:hidden;background:#050506}
 .vimeo-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
@@ -1086,7 +1132,16 @@ body.light .service{
     frame.classList.add('custom-vimeo');
     frame.innerHTML='';
     frame.appendChild(iframe);
-      frame._iframe=iframe;
+
+    const playButton=document.createElement('button');
+    playButton.type='button';
+    playButton.className='vimeo-play-button';
+    playButton.setAttribute('aria-label','Play video');
+    playButton.innerHTML='▶';
+    frame.appendChild(playButton);
+
+    frame._iframe=iframe;
+    frame._playButton=playButton;
   }
 
   frames.forEach(build);
@@ -1100,9 +1155,24 @@ body.light .service{
         frame._player=player;
         player.on('play',()=>{
           frame.classList.add('is-playing');
+          if(frame._playButton){
+            frame._playButton.classList.add('is-hidden');
+            frame._playButton.setAttribute('aria-label','Pause video');
+          }
         });
         player.on('pause',()=>{
           frame.classList.remove('is-playing');
+          if(frame._playButton){
+            frame._playButton.classList.remove('is-hidden');
+            frame._playButton.setAttribute('aria-label','Play video');
+          }
+        });
+        player.on('ended',()=>{
+          frame.classList.remove('is-playing');
+          if(frame._playButton){
+            frame._playButton.classList.remove('is-hidden');
+            frame._playButton.setAttribute('aria-label','Play video');
+          }
         });
         if(frame._pendingPlay){
           frame._pendingPlay=false;
@@ -1112,8 +1182,27 @@ body.light .service{
         const caseBrand=frame.closest('.case[data-brand]')?.dataset.brand;
         if(caseBrand==='dulingo' || caseBrand==='kitchow'){
           frame.style.cursor='pointer';
-          frame.addEventListener('click',()=>{ player.play().catch(()=>{}); });
           frame._iframe.style.pointerEvents='none';
+
+          const togglePlayback=()=>{
+            player.getPaused().then(paused=>{
+              if(paused) player.play().catch(()=>{});
+              else player.pause().catch(()=>{});
+            }).catch(()=>{});
+          };
+
+          if(frame._playButton){
+            frame._playButton.addEventListener('click',(event)=>{
+              event.stopPropagation();
+              togglePlayback();
+            });
+          }
+
+          frame.addEventListener('click',(event)=>{
+            if(event.target===frame || event.target===frame._iframe){
+              togglePlayback();
+            }
+          });
         }
         const carousel=frame.closest('.case-carousel,.brand-carousel');
         if(!carousel) return;
