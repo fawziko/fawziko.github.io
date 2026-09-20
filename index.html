@@ -834,6 +834,20 @@ body.light .service{
   .event-logo-grid .event-logo-card .event-logo-cta{bottom:14px !important;}
 }
 </style>
+
+<style id="vimeo-title-hide-dulingo-kitchow">
+/* Hide Vimeo's in-player title/account overlay while keeping the playback controls. */
+.case[data-brand="dulingo"] .vimeo-wrap::before,
+.case[data-brand="kitchow"] .vimeo-wrap::before {
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height:78px;
+  z-index:5;
+  pointer-events:none;
+  background:linear-gradient(to bottom, rgba(5,5,6,.98) 0%, rgba(5,5,6,.96) 72%, rgba(5,5,6,0) 100%);
+}
+</style>
 </head>
 <body>
 <button aria-label="Toggle light and dark mode" class="theme-toggle" id="themeToggle"><span class="theme-icon" id="themeIcon">☼</span></button>
@@ -1021,53 +1035,6 @@ body.light .service{
 <!-- Vimeo playback: upload videos to Vimeo, then replace the Vimeo IDs below. -->
 
 <!-- Vimeo embeds keep playback inside this portfolio instead of linking users away from the site. -->
-<script id="food-brand-modal-js">
-(function(){
-  const modal=document.getElementById('foodBrandModal');
-  if(!modal) return;
-  const title=document.getElementById('foodBrandModalTitle');
-  const frames=[...modal.querySelectorAll('[data-food-video]')];
-
-  const brands={"restaurant-02":{name:"SUSHIRO CIRCLE",ids:["https://player.vimeo.com/video/1228379763?h=605378a1b2","https://player.vimeo.com/video/1228380583?h=c1209074fd"]}};
-
-  function setVideo(frame,id){
-    frame.innerHTML='';
-    if(!id || id.startsWith('YOUR_VIMEO_')){
-      frame.innerHTML='<div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Add the Vimeo ID for this restaurant</small></div>';
-      return;
-    }
-    const iframe=document.createElement('iframe');
-    iframe.src=(id.startsWith('http') ? id : ('https://player.vimeo.com/video/'+encodeURIComponent(id))) + (id.includes('?') ? '&' : '?') + 'dnt=1&title=0&byline=0&portrait=0&badge=0&controls=1&autopause=1&playsinline=1';
-    iframe.allow='autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share';
-    iframe.allowFullscreen=true;
-    iframe.loading='lazy';
-    frame.appendChild(iframe);
-  }
-
-  function openBrand(key){
-    const brand=brands[key];
-    if(!brand) return;
-    title.textContent=brand.name;
-    frames.forEach((frame,i)=>setVideo(frame,brand.ids[i]));
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden','false');
-    document.body.style.overflow='hidden';
-  }
-
-  function closeBrand(){
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden','true');
-    frames.forEach(frame=>frame.innerHTML='<div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Add the Vimeo ID for this restaurant</small></div>');
-    document.body.style.overflow='';
-  }
-
-  document.querySelectorAll('.food-brand-card').forEach(card=>{
-    card.addEventListener('click',()=>openBrand(card.dataset.foodBrand));
-  });
-  modal.querySelectorAll('[data-close-food-modal]').forEach(el=>el.addEventListener('click',closeBrand));
-  document.addEventListener('keydown',e=>{if(e.key==='Escape' && modal.classList.contains('open')) closeBrand();});
-})();
-</script>
 <script id="vimeo-player-init">
 (function(){
   const frames=[...document.querySelectorAll('.vimeo-wrap[data-vimeo-id]')];
@@ -1172,6 +1139,53 @@ body.light .service{
     </div>
   </div>
 </div>
+<script id="food-brand-modal-js">
+(function(){
+  const modal=document.getElementById('foodBrandModal');
+  if(!modal) return;
+  const title=document.getElementById('foodBrandModalTitle');
+  const frames=[...modal.querySelectorAll('[data-food-video]')];
+
+  const brands={"restaurant-02":{name:"SUSHIRO CIRCLE",ids:["https://player.vimeo.com/video/1228379763?h=605378a1b2","https://player.vimeo.com/video/1228380583?h=c1209074fd"]}};
+
+  function setVideo(frame,id){
+    frame.innerHTML='';
+    if(!id || id.startsWith('YOUR_VIMEO_')){
+      frame.innerHTML='<div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Add the Vimeo ID for this restaurant</small></div>';
+      return;
+    }
+    const iframe=document.createElement('iframe');
+    iframe.src=(id.startsWith('http') ? id : ('https://player.vimeo.com/video/'+encodeURIComponent(id))) + (id.includes('?') ? '&' : '?') + 'dnt=1&title=0&byline=0&portrait=0&badge=0&controls=1&autopause=1&playsinline=1';
+    iframe.allow='autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share';
+    iframe.allowFullscreen=true;
+    iframe.loading='lazy';
+    frame.appendChild(iframe);
+  }
+
+  function openBrand(key){
+    const brand=brands[key];
+    if(!brand) return;
+    title.textContent=brand.name;
+    frames.forEach((frame,i)=>setVideo(frame,brand.ids[i]));
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+  }
+
+  function closeBrand(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    frames.forEach(frame=>frame.innerHTML='<div class="vimeo-placeholder"><span>VIMEO VIDEO</span><small>Add the Vimeo ID for this restaurant</small></div>');
+    document.body.style.overflow='';
+  }
+
+  document.querySelectorAll('.food-brand-card').forEach(card=>{
+    card.addEventListener('click',()=>openBrand(card.dataset.foodBrand));
+  });
+  modal.querySelectorAll('[data-close-food-modal]').forEach(el=>el.addEventListener('click',closeBrand));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape' && modal.classList.contains('open')) closeBrand();});
+})();
+</script>
 <style id="food-brand-modal-repair">
 .food-brand-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}
 .food-brand-modal.open{display:flex}
