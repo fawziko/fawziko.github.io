@@ -1,6 +1,8 @@
-# Railway: create a project from this GitHub repo, then set the service's
-# "Root Directory" to `commentdm` (Settings → Source). Add a volume mounted at
-# /data for SQLite persistence, or set DATABASE_URL to a Postgres URL.
+# Railway: create a project from this GitHub repo. When CommentDM is the repo
+# root, leave the service's "Root Directory" empty. If it lives in a
+# subdirectory of a larger repo, set "Root Directory" to that subdirectory
+# (Settings → Source). Add a volume mounted at /data for SQLite persistence,
+# or set DATABASE_URL to a Postgres URL.
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"

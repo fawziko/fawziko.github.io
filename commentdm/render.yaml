@@ -1,5 +1,8 @@
-# Render Blueprint. In Render: New → Blueprint → connect the repo and point it
-# at this file from the repo root (Blueprint Path: commentdm/render.yaml).
+# Render Blueprint. Use this file when CommentDM is the repository root:
+# Render: New → Blueprint → connect the repo (Blueprint Path: render.yaml).
+# If CommentDM lives in a subdirectory of a larger repo, also add
+# `rootDir: <that subdirectory>` under the service below and set the
+# Blueprint Path to <subdirectory>/render.yaml.
 #
 # The disk below keeps SQLite data across deploys. Disks require a paid
 # instance type; on the free plan use Render Postgres instead and replace
@@ -10,7 +13,6 @@ services:
     runtime: docker
     plan: starter
     region: frankfurt
-    rootDir: commentdm
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true

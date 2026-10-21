@@ -114,9 +114,11 @@ Meta references: [Instagram Platform overview](https://developers.facebook.com/d
 
 ### Run locally
 
-```bash
-cd commentdm
+Run every command below **from the CommentDM directory**: that is `commentdm/`
+when you use the monorepo, or the repository root if you cloned CommentDM on its
+own.
 
+```bash
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
@@ -151,7 +153,6 @@ On a fresh install you can click **Load sample data** to explore the UI. Sample 
 ### Docker
 
 ```bash
-cd commentdm
 docker build -t commentdm .
 docker run --rm -p 8000:8000 \
   --env-file .env \
@@ -660,13 +661,31 @@ commentdm/
 └── README.md
 ```
 
-The app is **not** a Python package; run it from this directory (`uvicorn main:app`) so absolute imports resolve. The Docker image does the same.
+The app is **not** a Python package; run it from the app directory (`uvicorn main:app`) so absolute imports resolve. The Docker image does the same. In this repository the app lives in `commentdm/`; when CommentDM is deployed from its own repository, that directory *is* the repo root.
 
 ---
 
 ## Deployment
 
 The app is a single stateless web process **except** for SQLite and the in-process background task runner. For production, either mount a persistent disk for SQLite or point `DATABASE_URL` at Postgres.
+
+### Hosting options at a glance
+
+GitHub Pages **cannot** host this app. Pages only serves static files, while
+CommentDM needs a long-running Python process, a writable database and
+in-process background tasks. Use a container host instead — Render and Railway
+below both build the included `Dockerfile` straight from a GitHub repository,
+give you the public HTTPS URL Meta requires, and have free/cheap starter tiers.
+
+| Host | Effort | Persistence | Notes |
+|---|---|---|---|
+| **Render** | Blueprint (`render.yaml`) or manual Docker service | Disk (paid) or Postgres | Free tier sleeps when idle and has no disk. |
+| **Railway** | Dockerfile auto-detected | Volume at `/data` or Postgres | Usage-based billing, $5 trial credit. |
+| **Any VPS** | `docker compose` / `docker run` | Named volume | Full control; you manage TLS. |
+| **Fly.io / Koyeb / Cloud Run** | Dockerfile | Volume / managed Postgres | Cloud Run needs a Postgres or a mounted volume. |
+
+If you only need a *marketing* page for the tool, that can live on GitHub Pages
+as a separate static site, but the automation itself must run on a container host.
 
 ### Environment checklist
 
@@ -685,7 +704,10 @@ The Instagram token/account ID can be saved in the dashboard after the first dep
 ### Railway
 
 1. Push this repository to GitHub and create a Railway project: **New Project → Deploy from GitHub repo**.
-2. Open the service → **Settings → Source → Root Directory** and set it to `commentdm`. Railway will use `commentdm/railway.toml` and the Dockerfile.
+2. Open the service → **Settings → Source → Root Directory**:
+   - standalone CommentDM repo → leave it **empty** (the repo root is the app);
+   - monorepo like this one → set it to `commentdm`.
+   Railway then finds `railway.toml` and the `Dockerfile` at that root.
 3. **Settings → Networking → Generate Domain** (HTTPS is automatic). Copy the domain.
 4. Add a **Volume** mounted at `/data` (SQLite persistence). Keep one replica while using SQLite.
 5. Add the variables above (`PUBLIC_BASE_URL` = `https://your-domain`).
@@ -696,7 +718,7 @@ If you prefer Postgres, add the Railway Postgres plugin, set `DATABASE_URL=${{Po
 
 ### Render
 
-- A `render.yaml` blueprint is included. In Render: **New → Blueprint**, connect the repository, and set the **Blueprint Path** to `commentdm/render.yaml` (custom blueprint paths are supported).
+- A `render.yaml` blueprint is included. In Render: **New → Blueprint**, connect the repository, and set the **Blueprint Path** to `render.yaml` (standalone repo) or `commentdm/render.yaml` (monorepo). If you use a subdirectory, also add `rootDir: commentdm` under the service in `render.yaml`.
 - The blueprint provisions a Docker web service, a 1 GB disk at `/data`, and prompts for secrets (`sync: false`).
 - Disks require a paid instance type. On the free plan, replace the disk/SQLite with a Render Postgres instance and set `DATABASE_URL` to its internal connection string.
 - After the first deploy, set `PUBLIC_BASE_URL` to the Render URL and restart if needed.
@@ -753,8 +775,7 @@ Long-lived User tokens expire after ~60 days. There are two supported ways to re
 **CLI:**
 
 ```bash
-cd commentdm
-source .venv/bin/activate
+source .venv/bin/activate      # from the CommentDM directory
 python scripts/refresh_token.py
 ```
 
@@ -801,8 +822,7 @@ The processed-comment table intentionally doubles as the activity log.
 ## Testing
 
 ```bash
-cd commentdm
-pip install -r requirements-dev.txt
+pip install -r requirements-dev.txt   # from the CommentDM directory
 pytest -q
 ```
 
