@@ -1,0 +1,95 @@
+{# Inline SVG icon set — no icon fonts, no CDN, works with a strict CSP. #}
+{% macro icon(name, size=20, cls="") -%}
+<svg class="icon {{ cls }}" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{%- if name == "campaigns" -%}
+<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>
+{%- elif name == "activity" -%}
+<path d="M3 12h4l2.5-7 5 14 2.5-7h4"/>
+{%- elif name == "settings" -%}
+<path d="M4 6h8M17.5 6H20M4 12h3.5M13 12h7M4 18h8M17.5 18H20"/><circle cx="14.75" cy="6" r="2.25"/><circle cx="10.25" cy="12" r="2.25"/><circle cx="14.75" cy="18" r="2.25"/>
+{%- elif name == "plus" -%}
+<path d="M12 5v14M5 12h14"/>
+{%- elif name == "instagram" -%}
+<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/>
+{%- elif name == "external" -%}
+<path d="M14 4h6v6M20 4l-8.5 8.5M19 14v5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 19V7a1.5 1.5 0 0 1 1.5-1.5h5"/>
+{%- elif name == "trash" -%}
+<path d="M4 7h16M9.5 7V4.75A1.75 1.75 0 0 1 11.25 3h1.5A1.75 1.75 0 0 1 14.5 4.75V7M6.5 7l.9 12.1a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9L17.5 7M10 11v6M14 11v6"/>
+{%- elif name == "edit" -%}
+<path d="M4 20h4L19.2 8.8a2.9 2.9 0 0 0-4.1-4.1L4 16v4Z"/><path d="m13.5 6.5 4 4"/>
+{%- elif name == "play" -%}
+<path d="M8 5.4v13.2L19 12 8 5.4Z"/>
+{%- elif name == "copy" -%}
+<rect x="8" y="8" width="12.5" height="12.5" rx="2.5"/><path d="M16 8V5.5A2.5 2.5 0 0 0 13.5 3h-8A2.5 2.5 0 0 0 3 5.5v8A2.5 2.5 0 0 0 5.5 16H8"/>
+{%- elif name == "check" -%}
+<path d="m5 12.5 4.5 4.5L19 7"/>
+{%- elif name == "check-circle" -%}
+<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.7 2.8L16.2 9"/>
+{%- elif name == "alert" -%}
+<path d="M10.3 4 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17.2h.01"/>
+{%- elif name == "x" -%}
+<path d="m6 6 12 12M18 6 6 18"/>
+{%- elif name == "chevron-down" -%}
+<path d="m6 9 6 6 6-6"/>
+{%- elif name == "message" -%}
+<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.6 9.6 0 0 1-3.4-.6L3 21l1.7-4.6A8.4 8.4 0 0 1 3 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/>
+{%- elif name == "heart" -%}
+<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1Z"/>
+{%- elif name == "comment" -%}
+<path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1-4.5A8 8 0 1 1 21 12Z"/>
+{%- elif name == "user" -%}
+<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>
+{%- elif name == "refresh" -%}
+<path d="M20 11a8 8 0 1 0-2.4 6.4M20 5v6h-6"/>
+{%- elif name == "arrow-right" -%}
+<path d="M4 12h16M14 6l6 6-6 6"/>
+{%- elif name == "search" -%}
+<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+{%- elif name == "key" -%}
+<circle cx="8" cy="15.5" r="4.5"/><path d="m11.2 12.3 8.8-8.8M17 3.5l3.5 3.5M14 6.5 17.5 10"/>
+{%- elif name == "shield" -%}
+<path d="M12 3 4.5 6v5.6c0 4.5 3.2 8.1 7.5 9.4 4.3-1.3 7.5-4.9 7.5-9.4V6L12 3Z"/><path d="m9 12.2 2.1 2.1 4.1-4.2"/>
+{%- elif name == "webhook" -%}
+<circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="6" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/><path d="M8 12h2.5a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3M13.5 15a3 3 0 0 1-3 3H8"/>
+{%- elif name == "database" -%}
+<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
+{%- elif name == "logout" -%}
+<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h11"/>
+{%- elif name == "image" -%}
+<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15.5-4.5-4-9.5 9"/>
+{%- elif name == "clock" -%}
+<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.3 2"/>
+{%- elif name == "zap" -%}
+<path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/>
+{%- elif name == "eye" -%}
+<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>
+{%- elif name == "eye-off" -%}
+<path d="m3 3 18 18M10.6 5.7A9.8 9.8 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a17.4 17.4 0 0 1-3.4 4M6.5 6.9A17.4 17.4 0 0 0 2 12s3.6 6.5 10 6.5a10 10 0 0 0 4.2-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+{%- elif name == "send" -%}
+<path d="M21 3 10.5 13.5M21 3l-6.8 18-3.7-8.5L2 8.8 21 3Z"/>
+{%- elif name == "spark" -%}
+<path d="M12 2.5 14.4 9l6.6 2.4-6.6 2.4L12 20.5 9.6 13.8 3 11.4 9.6 9 12 2.5Z"/>
+{%- elif name == "filter" -%}
+<path d="M4 5h16l-6 7v5.5l-4 2V12L4 5Z"/>
+{%- elif name == "menu" -%}
+<path d="M4 7h16M4 12h16M4 17h16"/>
+{%- elif name == "more" -%}
+<circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+{%- else -%}
+<circle cx="12" cy="12" r="9"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro logo(size=40) -%}
+<svg class="brand-logo" width="{{ size }}" height="{{ size }}" viewBox="0 0 44 44" fill="none" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="brandGradient" x1="4" y1="2" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8b5cff"/><stop offset="1" stop-color="#ff5c8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="44" height="44" rx="13" fill="url(#brandGradient)"/>
+  <path d="M11.5 15.5A4 4 0 0 1 15.5 11.5h13a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H21.5l-6 4.6v-4.6h-.5a4 4 0 0 1-4-4v-8Z" fill="#fff" fill-opacity=".14" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M22.5 15.8v6.8M19.1 19.2h6.8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+</svg>
+{%- endmacro %}

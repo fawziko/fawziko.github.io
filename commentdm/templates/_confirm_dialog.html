@@ -1,0 +1,14 @@
+{% from "_icons.html" import icon %}
+<dialog class="modal modal-confirm" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+  <div class="confirm-body">
+    <span class="confirm-icon" id="confirm-icon">{{ icon('alert', 22) }}</span>
+    <div>
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-message">This action cannot be undone.</p>
+    </div>
+  </div>
+  <div class="modal-buttons">
+    <button type="button" class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+    <button type="button" class="btn btn-danger" id="confirm-ok">Confirm</button>
+  </div>
+</dialog>

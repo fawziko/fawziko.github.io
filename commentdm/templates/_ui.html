@@ -1,0 +1,37 @@
+{# Shared presentational macros. #}
+{% from "_icons.html" import icon %}
+
+{% set _overall_labels = {
+  "success": "Delivered",
+  "partial": "Partial",
+  "failed": "Failed",
+  "processing": "Processing",
+  "simulated": "Simulated",
+  "ignored": "Ignored"
+} %}
+{% set _delivery_labels = {
+  "sent": "Sent",
+  "already_sent": "Already sent",
+  "failed": "Failed",
+  "pending": "Pending",
+  "simulated": "Simulated",
+  "skipped": "Skipped"
+} %}
+
+{% macro status_badge(status, label=None) -%}
+<span class="status-badge status-{{ status }}">
+  <span class="status-dot" aria-hidden="true"></span>
+  <span>{{ label or _overall_labels.get(status, status|capitalize) }}</span>
+</span>
+{%- endmacro %}
+
+{% macro delivery_badge(state) -%}
+<span class="status-badge status-{{ state }}">
+  <span class="status-dot" aria-hidden="true"></span>
+  <span>{{ _delivery_labels.get(state, state|capitalize) }}</span>
+</span>
+{%- endmacro %}
+
+{% macro empty_icon(name) -%}
+<span class="empty-icon">{{ icon(name, 26) }}</span>
+{%- endmacro %}

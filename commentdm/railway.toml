@@ -1,0 +1,12 @@
+# Railway: create a project from this GitHub repo, then set the service's
+# "Root Directory" to `commentdm` (Settings → Source). Add a volume mounted at
+# /data for SQLite persistence, or set DATABASE_URL to a Postgres URL.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
