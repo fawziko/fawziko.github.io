@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_ui.html" import status_badge %}
+{% block title %}Campaigns{% endblock %}
+{% block eyebrow %}Automation{% endblock %}
+{% block heading %}Campaigns{% endblock %}
+
+{% block actions %}
+<span class="live-chip{{ ' is-live' if connected }}">
+  <span class="live-dot" aria-hidden="true"></span>
+  {{ 'Listening' if connected else 'Setup needed' }}
+</span>
+<button type="button" class="btn btn-primary js-new-campaign">
+  {{ icon('plus', 18) }}<span>New campaign</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<section class="stats-grid" aria-label="Account overview">
+  <article class="stat-card">
+    <div class="stat-top">
+      <span class="stat-icon tone-violet">{{ icon('campaigns', 19) }}</span>
+      <span class="stat-kicker">Live</span>
+    </div>
+    <p class="stat-value" data-stat="campaigns_active">{{ stats.campaigns_active }}</p>
+    <p class="stat-label">Active campaigns</p>
+    <p class="stat-hint">{{ stats.campaigns_total }} total created</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-top">
+      <span class="stat-icon tone-pink">{{ icon('comment', 19) }}</span>
+      <span class="stat-kicker">Matched</span>
+    </div>
+    <p class="stat-value" data-stat="comments_matched">{{ stats.comments_matched|num }}</p>
+    <p class="stat-label">Comments matched</p>
+    <p class="stat-hint">{{ stats.processed_today }} processed today</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-top">
+      <span class="stat-icon tone-green">{{ icon('send', 19) }}</span>
+      <span class="stat-kicker">Delivered</span>
+    </div>
+    <p class="stat-value" data-stat="dms_sent">{{ stats.dms_sent|num }}</p>
+    <p class="stat-label">DMs sent</p>
+    <p class="stat-hint">{{ stats.replies_sent }} public replies</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-top">
+      <span class="stat-icon tone-amber">{{ icon('zap', 19) }}</span>
+      <span class="stat-kicker">Reliability</span>
+    </div>
+    <p class="stat-value" data-stat="success_rate">{{ stats.success_rate }}<span class="unit">%</span></p>
+    <p class="stat-label">Success rate</p>
+    <div class="stat-meter" aria-hidden="true"><i style="width: {{ stats.success_rate }}%"></i></div>
+    <p class="stat-hint">Reply + DM both delivered</p>
+  </article>
+</section>
+
+<div class="section-head">
+  <div class="section-heading">
+    <h2>Campaigns <span class="count-badge">{{ campaigns|length }}</span></h2>
+    <p>Keyword rules for the posts and reels you want to automate.</p>
+  </div>
+  <label class="search-field">
+    {{ icon('search', 18) }}
+    <span class="sr-only">Search campaigns</span>
+    <input type="search" id="campaign-search" placeholder="Search name, keyword or post ID" autocomplete="off">
+  </label>
+</div>
+
+{% if campaigns %}
+  <div class="campaign-list" id="campaign-list">
+    {% for campaign in campaigns %}
+      {% set keywords = split_keywords(campaign.keywords) %}
+      <article class="campaign-card{{ ' is-paused' if not campaign.is_active }}"
+               data-campaign-id="{{ campaign.id }}"
+               data-active="{{ 'true' if campaign.is_active else 'false' }}"
+               data-search="{{ (campaign.name ~ ' ' ~ campaign.keywords ~ ' ' ~ campaign.post_id) | lower }}">
+        <div class="campaign-thumb">
+          <span class="thumb-fallback">{{ icon('instagram', 25) }}</span>
+          {% if campaign.post_thumbnail_url %}
+            <img src="{{ campaign.post_thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+          {% endif %}
+          <span class="thumb-badge">{{ icon('image', 12) }} Post</span>
+        </div>
+
+        <div class="campaign-main">
+          <div class="campaign-title-row">
+            <h3 class="campaign-name">{{ campaign.name or ('Post ' ~ campaign.post_id) }}</h3>
+            <span class="badge {{ 'badge-live' if campaign.is_active else 'badge-paused' }}" data-role="status-badge">
+              <span class="badge-dot" aria-hidden="true"></span>
+              <span data-role="status-text">{{ 'Active' if campaign.is_active else 'Paused' }}</span>
+            </span>
+          </div>
+
+          <div class="keyword-row">
+            {% for keyword in keywords[:5] %}
+              <span class="chip">{{ keyword }}</span>
+            {% endfor %}
+            {% if keywords|length > 5 %}
+              <span class="chip chip-more">+{{ keywords|length - 5 }} more</span>
+            {% endif %}
+          </div>
+
+          <div class="campaign-excerpts">
+            <p><span class="excerpt-label">Reply</span><span class="excerpt-text">{{ campaign.comment_reply }}</span></p>
+            <p><span class="excerpt-label excerpt-label-dm">DM</span><span class="excerpt-text">{{ campaign.dm_message }}</span></p>
+          </div>
+
+          <div class="campaign-meta">
+            <span title="Instagram media ID">{{ icon('instagram', 13) }}<span class="mono">{{ campaign.post_id }}</span></span>
+            <span>{{ icon('zap', 13) }}{{ campaign.times_triggered }} match{{ '' if campaign.times_triggered == 1 else 'es' }}</span>
+            <span class="meta-time">{{ icon('clock', 13) }}{{ campaign.last_triggered_at|relative if campaign.last_triggered_at else 'Never triggered' }}</span>
+          </div>
+        </div>
+
+        <div class="campaign-side">
+          <button type="button" class="switch" role="switch"
+                  aria-checked="{{ 'true' if campaign.is_active else 'false' }}"
+                  aria-label="Toggle campaign {{ campaign.name or campaign.post_id }}"
+                  data-action="toggle">
+            <span class="switch-knob" aria-hidden="true"></span>
+          </button>
+          <div class="campaign-actions">
+            <button type="button" class="icon-btn" data-action="simulate" title="Test with a sample comment" aria-label="Test campaign">
+              {{ icon('play', 16) }}
+            </button>
+            <button type="button" class="icon-btn" data-action="edit" title="Edit campaign" aria-label="Edit campaign">
+              {{ icon('edit', 16) }}
+            </button>
+            <button type="button" class="icon-btn icon-btn-danger" data-action="delete" title="Delete campaign" aria-label="Delete campaign">
+              {{ icon('trash', 16) }}
+            </button>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+  <div class="empty-state empty-state-search" id="campaign-no-results" hidden>
+    <span class="empty-icon">{{ icon('search', 24) }}</span>
+    <h2>No campaigns match that search</h2>
+    <p>Try a different name, keyword or post ID.</p>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-art">
+      <span class="empty-orbit"></span>
+      {{ icon('instagram', 32) }}
+      <span class="empty-spark">{{ icon('spark', 16) }}</span>
+    </div>
+    <p class="eyebrow">Start here</p>
+    <h2>Turn one comment into a conversation</h2>
+    <p class="empty-copy">Pick a post, add your trigger keywords, and write the public reply plus the DM. CommentDM handles every matching comment automatically.</p>
+    <div class="empty-actions">
+      <button type="button" class="btn btn-primary js-new-campaign">{{ icon('plus', 18) }} Create a campaign</button>
+      {% if demo_available %}
+        <button type="button" class="btn btn-secondary" id="load-demo">{{ icon('spark', 17) }} Load sample data</button>
+      {% endif %}
+    </div>
+    {% if demo_available %}
+      <p class="empty-note">Sample data never calls Instagram — it is clearly labelled as simulated.</p>
+    {% endif %}
+
+    <div class="flow-row" aria-label="How CommentDM works">
+      <div class="flow-step">
+        <span class="flow-num">01</span>
+        <div><strong>Someone comments</strong><span>A tracked keyword lands on your post.</span></div>
+      </div>
+      {{ icon('arrow-right', 16, "flow-arrow") }}
+      <div class="flow-step">
+        <span class="flow-num">02</span>
+        <div><strong>You reply publicly</strong><span>Your canned reply appears under the comment.</span></div>
+      </div>
+      {{ icon('arrow-right', 16, "flow-arrow") }}
+      <div class="flow-step">
+        <span class="flow-num">03</span>
+        <div><strong>The DM lands</strong><span>A private reply drops into their inbox.</span></div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if recent %}
+<section class="panel recent-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Recent activity</h2>
+      <p>Every matched comment, reply and DM is logged with its delivery status.</p>
+    </div>
+    <a class="text-link" href="/dashboard/activity">View all {{ icon('arrow-right', 15) }}</a>
+  </div>
+  <div class="mini-activity">
+    {% for record in recent %}
+      <div class="mini-row">
+        {{ status_badge(record.status) }}
+        <div class="mini-copy">
+          <strong>@{{ record.commenter_username or 'unknown' }}</strong>
+          <span>{{ record.comment_text }}</span>
+        </div>
+        <span class="mini-campaign">{{ record.campaign.name if record.campaign else 'Deleted campaign' }}</span>
+        <time class="mini-time" datetime="{{ record.created_at|dt }}">{{ record.created_at|relative }}</time>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<dialog class="modal modal-wide" id="campaign-dialog" aria-labelledby="campaign-dialog-title">
+  <form id="campaign-form" autocomplete="off">
+    <header class="modal-head">
+      <div>
+        <p class="eyebrow" id="campaign-mode-label">New automation</p>
+        <h2 id="campaign-dialog-title">Create campaign</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-dialog aria-label="Close dialog">{{ icon('x', 19) }}</button>
+    </header>
+
+    <div class="modal-body campaign-form-grid">
+      <div class="form-column">
+        <input type="hidden" id="campaign-id" value="">
+
+        <div class="field">
+          <div class="label-row">
+            <label for="campaign-name">Campaign name</label>
+            <span class="label-note">optional</span>
+          </div>
+          <input id="campaign-name" maxlength="120" placeholder="e.g. Pricing reel → price list">
+        </div>
+
+        <div class="field">
+          <label for="post-id">Instagram post ID</label>
+          <div class="input-with-button">
+            <input id="post-id" inputmode="numeric" pattern="[0-9]{5,30}" placeholder="17895695668004550" required>
+            <button type="button" class="btn btn-secondary btn-sm" id="preview-btn">
+              {{ icon('refresh', 15) }}<span>Preview</span>
+            </button>
+          </div>
+          <p class="field-hint">The numeric media ID from the Graph API Explorer. <a href="https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-media/" target="_blank" rel="noopener noreferrer">How to find it {{ icon('external', 12) }}</a></p>
+        </div>
+
+        <div class="post-preview" id="post-preview" data-state="empty">
+          <div class="preview-thumb" id="preview-thumb">
+            <span class="preview-fallback">{{ icon('instagram', 22) }}</span>
+            <img id="preview-image" alt="Instagram post preview" loading="lazy" referrerpolicy="no-referrer" hidden>
+          </div>
+          <div class="preview-copy">
+            <p class="preview-status" id="preview-status">Paste a post ID, then preview it.</p>
+            <p class="preview-caption" id="preview-caption" hidden></p>
+            <a class="text-link preview-link" id="preview-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open on Instagram {{ icon('external', 13) }}</a>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="keywords">Trigger keywords</label>
+          <input id="keywords" placeholder="price, pricing, cost" required>
+          <p class="field-hint">Comma-separated. Case-insensitive, partial match anywhere in the comment.</p>
+          <div class="keyword-preview" id="keyword-preview" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="form-column">
+        <div class="field">
+          <div class="label-row">
+            <label for="comment-reply">Public comment reply</label>
+            <span class="char-count" data-count-for="comment-reply">0 / 2200</span>
+          </div>
+          <textarea id="comment-reply" rows="3" maxlength="2200" required placeholder="Just sent it to your DMs 💌"></textarea>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="dm-message">Direct message</label>
+            <span class="char-count" data-count-for="dm-message">0 / 1000</span>
+          </div>
+          <textarea id="dm-message" rows="4" maxlength="1000" required placeholder="Hey! Here's the link I promised…"></textarea>
+          <p class="field-hint">Sent as a private reply to the comment. One per comment, within 7 days.</p>
+        </div>
+
+        <div class="conversation-preview">
+          <div class="conversation-head">
+            <span>{{ icon('message', 15) }} Conversation preview</span>
+            <span class="preview-live"><i></i> Live</span>
+          </div>
+          <div class="chat">
+            <div class="chat-row">
+              <span class="chat-avatar" id="chat-avatar">f</span>
+              <div class="chat-body">
+                <p class="chat-meta"><strong id="chat-username">follower</strong><span>now</span></p>
+                <div class="chat-bubble" id="chat-comment-text">Comment with a keyword…</div>
+              </div>
+            </div>
+            <div class="chat-row chat-row-business">
+              <span class="chat-avatar chat-avatar-business">{{ icon('spark', 15) }}</span>
+              <div class="chat-body">
+                <p class="chat-meta"><strong>{{ account_username or 'your_account' }}</strong><span>public reply</span></p>
+                <div class="chat-bubble chat-reply" id="chat-reply-text">Your public reply appears here.</div>
+                <p class="chat-meta chat-meta-dm"><strong>Direct message</strong><span>private</span></p>
+                <div class="chat-bubble chat-dm" id="chat-dm-text">Your DM appears here.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <label class="check-row">
+          <input type="checkbox" id="campaign-active" checked>
+          <span class="check-box" aria-hidden="true">{{ icon('check', 13) }}</span>
+          <span class="check-copy"><strong>Campaign active</strong><small>Start handling matching comments as soon as it is saved.</small></span>
+        </label>
+      </div>
+    </div>
+
+    <footer class="modal-foot">
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="save-campaign">
+          {{ icon('check', 17) }}<span>Save campaign</span>
+        </button>
+      </div>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="modal modal-simulate" id="simulate-dialog" aria-labelledby="simulate-title">
+  <form id="simulate-form">
+    <header class="modal-head">
+      <div>
+        <p class="eyebrow">Dry run</p>
+        <h2 id="simulate-title">Test this campaign</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-dialog aria-label="Close dialog">{{ icon('x', 19) }}</button>
+    </header>
+    <div class="modal-body">
+      <p class="modal-lead" id="simulate-lead">Paste a comment you might receive. CommentDM checks the keyword rules and shows the exact reply and DM that would be sent.</p>
+      <div class="field">
+        <label for="simulate-comment">Sample comment</label>
+        <textarea id="simulate-comment" rows="3" maxlength="2200" required placeholder="How much is the pricing package?"></textarea>
+        <div class="keyword-preview" id="simulate-keywords"></div>
+      </div>
+      <div class="field field-compact">
+        <label for="simulate-username">Commenter username <span class="label-note">optional</span></label>
+        <div class="input-prefix"><span>@</span><input id="simulate-username" maxlength="60" placeholder="lina.creates"></div>
+      </div>
+      <div class="simulate-result" id="simulate-result" hidden>
+        <div class="simulate-result-head">
+          {{ icon('check-circle', 17) }}
+          <span>Matched keyword <strong id="simulate-keyword"></strong></span>
+        </div>
+        <div class="sim-bubble">
+          <span class="sim-label">Public comment reply</span>
+          <p id="simulate-reply"></p>
+        </div>
+        <div class="sim-bubble sim-bubble-dm">
+          <span class="sim-label">Direct message</span>
+          <p id="simulate-dm"></p>
+        </div>
+        <p class="sim-note">Simulation only — no Instagram API call was made. The result is saved in Activity.</p>
+      </div>
+      <p class="form-error" id="simulate-error" role="alert" hidden></p>
+    </div>
+    <footer class="modal-foot">
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-ghost" data-close-dialog>Close</button>
+        <button type="submit" class="btn btn-primary" id="run-simulation">
+          {{ icon('play', 16) }}<span>Run test</span>
+        </button>
+      </div>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/campaigns.js" defer></script>
+{% endblock %}

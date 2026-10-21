@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Settings{% endblock %}
+{% block eyebrow %}Configuration{% endblock %}
+{% block heading %}Settings{% endblock %}
+
+{% block actions %}
+<a class="btn btn-secondary btn-sm" href="https://developers.facebook.com/docs/instagram-platform" target="_blank" rel="noopener noreferrer">
+  {{ icon('external', 15) }}<span>Meta setup guide</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-intro" data-settings-page
+     data-has-token="{{ 'true' if state.has_access_token else 'false' }}"
+     data-instagram-app-configured="{{ 'true' if instagram_app_configured else 'false' }}"
+     data-public-base-url="{{ public_base_url }}"
+     data-webhook-url="{{ webhook_url }}">
+  <div>
+    <h2>Connect your Instagram professional account</h2>
+    <p>Credentials are stored server-side and never rendered into this page. Use a long-lived token from the official Graph API.</p>
+  </div>
+  <div class="intro-badges">
+    <span>{{ icon('shield', 15) }} Signed webhooks</span>
+    <span>{{ icon('key', 15) }} Server-side secrets</span>
+    <span>{{ icon('instagram', 15) }} Official API</span>
+  </div>
+</div>
+
+<div class="settings-layout">
+  <div class="settings-main">
+    <section class="panel">
+      <div class="panel-head">
+        <span class="panel-icon tone-violet">{{ icon('key', 20) }}</span>
+        <div class="panel-title">
+          <h2>Instagram credentials</h2>
+          <p>Token and IDs used by the webhook worker to reply and send DMs.</p>
+        </div>
+        <span class="badge {{ 'badge-live' if state.has_access_token else 'badge-paused' }}">
+          <span class="badge-dot"></span>{{ 'Token saved' if state.has_access_token else 'No token' }}
+        </span>
+      </div>
+
+      <form id="settings-form" class="panel-body" autocomplete="off">
+        <div class="field">
+          <div class="label-row">
+            <label for="access-token">Long-lived User Access Token</label>
+            <span class="label-note">
+              {%- if state.token_source == 'environment' -%}loaded from environment
+              {%- elif state.token_source == 'database' -%}saved in database
+              {%- endif -%}
+            </span>
+          </div>
+          <div class="input-with-icon">
+            <input type="password" id="access-token" placeholder="{{ state.access_token_masked or 'EAAG… paste your long-lived token' }}" spellcheck="false">
+            <button type="button" class="icon-btn input-icon-btn" id="toggle-token-visibility" aria-label="Show token" aria-pressed="false">
+              {{ icon('eye', 17) }}
+            </button>
+          </div>
+          <p class="field-hint" id="token-hint">
+            {% if state.has_access_token %}
+              A token is stored ({{ state.access_token_masked }}). Leave this blank to keep it, or paste a new one to replace it.
+            {% else %}
+              Create one in the Graph API Explorer after adding the Instagram Graph API product. It expires after about 60 days.
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="instagram-account-id">Instagram Business Account ID</label>
+            <input id="instagram-account-id" inputmode="numeric" pattern="[0-9]{5,30}" value="{{ state.instagram_business_account_id or '' }}" placeholder="17841400000000000">
+            <p class="field-hint">The professional account ID returned by <code>GET /me/accounts</code> → <code>instagram_business_account.id</code>.</p>
+          </div>
+          <div class="field">
+            <label for="page-id">Facebook Page ID</label>
+            <input id="page-id" inputmode="numeric" pattern="[0-9]{5,30}" value="{{ state.page_id or '' }}" placeholder="100000000000000">
+            <p class="field-hint">The Page linked to the Instagram account. Stored for reference and Page-level lookups.</p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="save-settings">
+            {{ icon('check', 17) }}<span>Save credentials</span>
+          </button>
+          <button type="button" class="btn btn-secondary js-test-connection">
+            {{ icon('activity', 17) }}<span>Test connection</span>
+          </button>
+          {% if state.has_access_token %}
+            <button type="button" class="btn btn-danger-ghost" id="remove-token">
+              {{ icon('trash', 16) }}<span>Remove token</span>
+            </button>
+          {% endif %}
+        </div>
+
+        <div class="inline-result" id="connection-result" role="status" hidden></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="panel-icon tone-pink">{{ icon('webhook', 20) }}</span>
+        <div class="panel-title">
+          <h2>Webhook &amp; signatures</h2>
+          <p>Meta calls this URL the moment somebody comments on a tracked post.</p>
+        </div>
+        <span class="badge {{ 'badge-live' if verify_token_configured and app_secret_configured else 'badge-warn' }}">
+          <span class="badge-dot"></span>{{ 'Secured' if verify_token_configured and app_secret_configured else 'Incomplete' }}
+        </span>
+      </div>
+
+      <div class="panel-body">
+        <div class="field">
+          <label for="webhook-url">Callback URL</label>
+          <div class="copy-field">
+            <input id="webhook-url" value="{{ webhook_url }}" readonly>
+            <button type="button" class="icon-btn" data-copy-target="webhook-url" title="Copy callback URL" aria-label="Copy callback URL">
+              {{ icon('copy', 16) }}
+            </button>
+          </div>
+          <p class="field-hint">Paste this into <strong>Webhooks → Instagram → comments</strong> in the Meta app dashboard. It must be public HTTPS and end with <code>/webhook/instagram</code>.</p>
+        </div>
+
+        <div class="field">
+          <label for="verify-token-display">Verify token</label>
+          <div class="copy-field">
+            <input id="verify-token-display" value="{{ 'Configured in environment' if verify_token_configured else 'Not configured' }}" readonly>
+            <span class="field-state {{ 'ok' if verify_token_configured else 'warn' }}">{{ icon('check' if verify_token_configured else 'alert', 14) }}</span>
+          </div>
+          <p class="field-hint">The exact value of <code>WEBHOOK_VERIFY_TOKEN</code> in your <code>.env</code>. It is intentionally never sent to the browser.</p>
+        </div>
+
+        <div class="security-rows">
+          <div class="security-row">
+            <span class="env-dot {{ 'ok' if app_secret_configured else 'warn' }}"></span>
+            <div><strong>X-Hub-Signature-256 validation</strong><span>Every webhook body is verified with <code>FACEBOOK_APP_SECRET</code> before parsing.</span></div>
+            <span class="env-state">{{ 'Enforced' if app_secret_configured else 'Missing secret' }}</span>
+          </div>
+          <div class="security-row">
+            <span class="env-dot {{ 'ok' if verify_token_configured else 'warn' }}"></span>
+            <div><strong>Meta challenge handshake</strong><span>GET requests must echo <code>hub.challenge</code> with a matching verify token.</span></div>
+            <span class="env-state">{{ 'Ready' if verify_token_configured else 'Missing token' }}</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="subscribe-webhooks">
+            {{ icon('webhook', 17) }}<span>Subscribe comment webhooks</span>
+          </button>
+          <button type="button" class="btn btn-ghost" data-copy-target="webhook-url">
+            {{ icon('copy', 16) }}<span>Copy URL</span>
+          </button>
+        </div>
+        <p class="field-hint">Subscribing calls <code>POST /&lt;ig-id&gt;/subscribed_apps</code> with <code>comments,messages</code> — the same thing the "Subscribe to webhooks" step in the README does.</p>
+        <div class="inline-result" id="webhook-result" role="status" hidden></div>
+      </div>
+    </section>
+
+    <details class="panel env-panel">
+      <summary>
+        <span class="panel-icon tone-green">{{ icon('database', 20) }}</span>
+        <span class="panel-title">
+          <span class="summary-title">Environment health</span>
+          <span class="summary-sub">Which server variables are configured — values are never displayed.</span>
+        </span>
+        {{ icon('chevron-down', 18, "summary-chevron") }}
+      </summary>
+      <div class="panel-body">
+        <div class="env-list">
+          {% for item in env_items %}
+            <div class="env-row">
+              <span class="env-dot {{ 'ok' if item.configured else ('warn' if item.required else 'muted') }}"></span>
+              <div class="env-copy">
+                <span class="env-name">{{ item.name }}</span>
+                <span>{{ item.description }}</span>
+              </div>
+              <span class="env-state {{ 'ok' if item.configured else ('warn' if item.required else '') }}">{{ 'Configured' if item.configured else ('Missing' if item.required else 'Optional') }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="env-foot">Current database: <strong>{{ database_backend }}</strong> · Graph API <strong>{{ graph_api_version }}</strong>. Edit values in <code>.env</code> locally or in your host's environment settings.</p>
+      </div>
+    </details>
+  </div>
+
+  <aside class="settings-aside">
+    <div class="panel summary-card{{ ' is-connected' if state.has_access_token and state.has_instagram_account_id }}">
+      <span class="summary-orb">{{ icon('instagram', 24) }}</span>
+      <h3>
+        {%- if account_username -%}@{{ account_username }}
+        {%- elif state.has_access_token -%}Credentials saved
+        {%- else -%}Not connected
+        {%- endif -%}
+      </h3>
+      <p>
+        {%- if state.has_access_token and state.has_instagram_account_id -%}
+          Ready to receive comments and send private replies.
+        {%- elif state.has_access_token -%}
+          Add the Instagram Business Account ID to enable DMs.
+        {%- else -%}
+          Paste a token to activate your campaigns.
+        {%- endif -%}
+      </p>
+      <dl class="summary-list">
+        <div><dt>Instagram ID</dt><dd class="mono">{{ state.instagram_business_account_id or '—' }}</dd></div>
+        <div><dt>Page ID</dt><dd class="mono">{{ state.page_id or '—' }}</dd></div>
+        <div><dt>Token</dt><dd class="mono">{{ state.access_token_masked or 'None' }}</dd></div>
+        <div><dt>Source</dt><dd><span class="source-tag">{{ state.token_source|capitalize }}</span></dd></div>
+      </dl>
+      <button type="button" class="btn btn-secondary btn-block js-test-connection">{{ icon('activity', 16) }} Test connection</button>
+    </div>
+
+    <div class="panel guide-card">
+      <div class="panel-head panel-head-tight">
+        <span class="panel-icon tone-amber">{{ icon('spark', 19) }}</span>
+        <div class="panel-title"><h2>Setup checklist</h2><p>Four moves to going live.</p></div>
+      </div>
+      <ol class="checklist">
+        <li class="{{ 'is-done' if state.has_access_token }}">
+          <span class="checklist-mark">{{ icon('check', 12) if state.has_access_token else '1' }}</span>
+          <div><strong>Long-lived token</strong><span>Instagram Graph API product + permissions.</span></div>
+        </li>
+        <li class="{{ 'is-done' if state.has_instagram_account_id }}">
+          <span class="checklist-mark">{{ icon('check', 12) if state.has_instagram_account_id else '2' }}</span>
+          <div><strong>Business Account ID</strong><span>From <code>GET /me/accounts</code>.</span></div>
+        </li>
+        <li class="{{ 'is-done' if app_secret_configured and verify_token_configured }}">
+          <span class="checklist-mark">{{ icon('check', 12) if app_secret_configured and verify_token_configured else '3' }}</span>
+          <div><strong>Webhook secrets</strong><span>App secret + verify token in <code>.env</code>.</span></div>
+        </li>
+        <li>
+          <span class="checklist-mark">4</span>
+          <div><strong>Subscribe in Meta</strong><span>Add the callback URL and subscribe to <code>comments</code>.</span></div>
+        </li>
+      </ol>
+      <a class="text-link guide-link" href="https://developers.facebook.com/docs/instagram-platform/webhooks" target="_blank" rel="noopener noreferrer">Webhook reference {{ icon('external', 13) }}</a>
+    </div>
+
+    <div class="panel tip-card">
+      <div class="tip-head">{{ icon('refresh', 17) }}<h3>Tokens last ~60 days</h3></div>
+      <p>Refresh the long-lived token before it expires. The button exchanges it for a new 60-day token and saves it automatically.</p>
+      <button type="button" class="btn btn-secondary btn-block" id="refresh-token"{% if not instagram_app_configured or not state.has_access_token %} disabled{% endif %}>
+        {{ icon('refresh', 16) }} Refresh token
+      </button>
+      {% if not instagram_app_configured %}
+        <p class="tip-note">Requires <code>INSTAGRAM_APP_ID</code> and <code>INSTAGRAM_APP_SECRET</code>.</p>
+      {% endif %}
+      <div class="inline-result" id="refresh-result" role="status" hidden></div>
+    </div>
+
+    <div class="panel docs-card">
+      <h3>Helpful links</h3>
+      <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer">{{ icon('external', 14) }} Meta app dashboard</a>
+      <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">{{ icon('external', 14) }} Graph API Explorer</a>
+      <a href="https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-comment/replies" target="_blank" rel="noopener noreferrer">{{ icon('external', 14) }} Comment replies API</a>
+      <a href="https://developers.facebook.com/docs/messenger-platform/instagram" target="_blank" rel="noopener noreferrer">{{ icon('external', 14) }} Instagram messaging</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/settings.js" defer></script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% import "_icons.html" as icons %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0b12">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="CommentDM — automated Instagram comment replies and keyword-triggered DMs.">
+  <title>{% block title %}Campaigns{% endblock %} · {{ app_name }}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='4' y1='2' x2='40' y2='42' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%238b5cff'/%3E%3Cstop offset='1' stop-color='%23ff5c8a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='44' height='44' rx='13' fill='url(%23g)'/%3E%3Cpath d='M12 16a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4h-6l-6 4v-4a4 4 0 0 1-4-4v-7Z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M22 16.5v6M19 19.5h6' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body data-page="{{ active }}">
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="flash-data" id="flash-data" hidden
+     {% if flash %}data-type="{{ flash.type }}" data-title="{{ flash.title }}" data-message="{{ flash.message }}"{% endif %}></div>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard" aria-label="CommentDM dashboard">
+      {{ icons.logo(42) }}
+      <span class="brand-text">
+        <strong>Comment<span>DM</span></strong>
+        <small>Instagram automation</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Main navigation">
+      <p class="nav-label">Workspace</p>
+      <a class="nav-link{{ ' is-active' if active == 'campaigns' }}" href="/dashboard"{% if active == 'campaigns' %} aria-current="page"{% endif %}>
+        {{ icons.icon('campaigns', 19) }}
+        <span>Campaigns</span>
+        {% if active_campaign_count %}<span class="nav-count">{{ active_campaign_count }}</span>{% endif %}
+      </a>
+      <a class="nav-link{{ ' is-active' if active == 'activity' }}" href="/dashboard/activity"{% if active == 'activity' %} aria-current="page"{% endif %}>
+        {{ icons.icon('activity', 19) }}
+        <span>Activity</span>
+      </a>
+      <a class="nav-link{{ ' is-active' if active == 'settings' }}" href="/dashboard/settings"{% if active == 'settings' %} aria-current="page"{% endif %}>
+        {{ icons.icon('settings', 19) }}
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-note">
+      <div class="sidebar-note-icon">{{ icons.icon('shield', 18) }}</div>
+      <p><strong>Official API only</strong><span>CommentDM never asks for your Instagram password.</span></p>
+    </div>
+
+    <div class="sidebar-bottom">
+      <a class="connection-card{{ ' is-connected' if connected }}" href="/dashboard/settings">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span class="connection-text">
+          <strong>
+            {%- if connected -%}
+              {% if account_username %}@{{ account_username }}{% else %}Instagram connected{% endif %}
+            {%- elif has_token -%}
+              Account ID needed
+            {%- else -%}
+              Not connected
+            {%- endif -%}
+          </strong>
+          <small>
+            {%- if connected -%}Webhook listening
+            {%- elif has_token -%}Finish setup in Settings
+            {%- else -%}Add credentials to begin
+            {%- endif -%}
+          </small>
+        </span>
+        <span class="connection-arrow">{{ icons.icon('arrow-right', 15) }}</span>
+      </a>
+      <div class="sidebar-meta">
+        <span>v{{ version }}</span>
+        <span aria-hidden="true">·</span>
+        <span>Graph {{ graph_version }}</span>
+        <a href="/docs" target="_blank" rel="noopener">API</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-heading">
+        <p class="eyebrow">{% block eyebrow %}Automation{% endblock %}</p>
+        <h1>{% block heading %}Campaigns{% endblock %}</h1>
+      </div>
+      <div class="topbar-actions">
+        {% block actions %}{% endblock %}
+      </div>
+    </header>
+
+    <main class="content" id="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <p>Built on the official Instagram Graph API. No unofficial automation, ever.</p>
+      <div>
+        <a href="https://developers.facebook.com/docs/instagram-platform" target="_blank" rel="noopener noreferrer">Meta API docs {{ icons.icon('external', 13) }}</a>
+        <a href="/health" target="_blank" rel="noopener">Health</a>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+{% include "_confirm_dialog.html" %}
+
+<noscript>
+  <div class="noscript-banner">JavaScript powers campaign editing. The dashboard still works for reading data, but enable JS to create or edit campaigns.</div>
+</noscript>
+
+<script src="/static/js/app.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

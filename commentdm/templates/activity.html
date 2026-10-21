@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_ui.html" import status_badge, delivery_badge %}
+{% block title %}Activity{% endblock %}
+{% block eyebrow %}Delivery log{% endblock %}
+{% block heading %}Activity{% endblock %}
+
+{% block actions %}
+<button type="button" class="btn btn-secondary btn-sm" id="refresh-activity">
+  {{ icon('refresh', 16) }}<span>Refresh</span>
+</button>
+<button type="button" class="btn btn-danger-ghost btn-sm" id="clear-activity"{% if not records %} disabled{% endif %}>
+  {{ icon('trash', 16) }}<span>Clear log</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="metric-strip" aria-label="Activity summary">
+  <div class="metric"><span>Matched comments</span><strong>{{ stats.comments_matched|num }}</strong></div>
+  <div class="metric"><span>Public replies</span><strong>{{ stats.replies_sent|num }}</strong></div>
+  <div class="metric"><span>DMs delivered</span><strong>{{ stats.dms_sent|num }}</strong></div>
+  <div class="metric"><span>Success rate</span><strong>{{ stats.success_rate }}<small>%</small></strong></div>
+  <div class="metric metric-note"><span>Simulated runs</span><strong>{{ stats.simulations|num }}</strong></div>
+</div>
+
+<div class="section-head">
+  <div class="section-heading">
+    <h2>Delivery log</h2>
+    <p>The dedupe ledger doubles as your audit trail. Newest first.</p>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <label class="search-field">
+    {{ icon('search', 18) }}
+    <span class="sr-only">Search activity</span>
+    <input type="search" id="activity-search" placeholder="Search comment, username or keyword" autocomplete="off">
+  </label>
+  <label class="select-field">
+    <span class="select-label">Status</span>
+    <span class="select-wrap">
+      <select id="activity-status">
+        <option value="">All statuses</option>
+        <option value="success">Delivered</option>
+        <option value="partial">Partial</option>
+        <option value="failed">Failed</option>
+        <option value="processing">Processing</option>
+        <option value="simulated">Simulated</option>
+      </select>
+      {{ icon('chevron-down', 15) }}
+    </span>
+  </label>
+  <label class="select-field">
+    <span class="select-label">Campaign</span>
+    <span class="select-wrap">
+      <select id="activity-campaign">
+        <option value="">All campaigns</option>
+        {% for campaign in campaigns %}
+          <option value="{{ campaign.id }}">{{ campaign.name or ('Post ' ~ campaign.post_id) }}</option>
+        {% endfor %}
+      </select>
+      {{ icon('chevron-down', 15) }}
+    </span>
+  </label>
+  <button type="button" class="btn btn-ghost btn-sm" id="reset-filters">Reset</button>
+  <span class="filter-count" id="activity-count">{{ records|length }} entr{{ 'y' if records|length == 1 else 'ies' }}</span>
+</div>
+
+{% if records %}
+  <div class="table-card">
+    <table class="activity-table" id="activity-table">
+      <thead>
+        <tr>
+          <th scope="col">Status</th>
+          <th scope="col">Comment</th>
+          <th scope="col">Keyword</th>
+          <th scope="col">Campaign</th>
+          <th scope="col">Reply</th>
+          <th scope="col">DM</th>
+          <th scope="col">When</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+          <tr data-status="{{ record.status }}"
+              data-campaign-id="{{ record.campaign_id or '' }}"
+              data-search="{{ ((record.commenter_username or '') ~ ' ' ~ record.comment_text ~ ' ' ~ (record.matched_keyword or '') ~ ' ' ~ (record.campaign.name if record.campaign else ''))|lower }}">
+            <td data-label="Status">{{ status_badge(record.status) }}</td>
+            <td data-label="Comment" class="cell-comment">
+              <span class="comment-author">@{{ record.commenter_username or 'unknown' }}</span>
+              <span class="comment-text">{{ record.comment_text }}</span>
+              {% if record.error_detail %}
+                <details class="row-details">
+                  <summary>Details</summary>
+                  <p>{{ record.error_detail }}</p>
+                </details>
+              {% endif %}
+              <span class="comment-id">comment {{ record.comment_id }}</span>
+            </td>
+            <td data-label="Keyword">
+              {% if record.matched_keyword %}<span class="chip chip-strong">{{ record.matched_keyword }}</span>{% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td data-label="Campaign" class="cell-campaign">
+              {% if record.campaign %}
+                <span class="campaign-ref">{{ record.campaign.name or ('Post ' ~ record.campaign.post_id) }}</span>
+                <span class="mono muted">Post {{ record.post_id }}</span>
+              {% else %}
+                <span class="muted">Deleted campaign</span>
+                <span class="mono muted">Post {{ record.post_id or '—' }}</span>
+              {% endif %}
+            </td>
+            <td data-label="Reply">{{ delivery_badge(record.comment_reply_status) }}</td>
+            <td data-label="DM">{{ delivery_badge(record.dm_status) }}</td>
+            <td data-label="When" class="cell-when">
+              <time datetime="{{ record.created_at|dt }}">{{ record.created_at|relative }}</time>
+              <span class="muted">{{ record.created_at|dt }}</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="empty-state empty-state-search" id="activity-no-results" hidden>
+    <span class="empty-icon">{{ icon('filter', 24) }}</span>
+    <h2>Nothing matches these filters</h2>
+    <p>Try another status or clear the search.</p>
+    <button type="button" class="btn btn-secondary btn-sm" data-reset-filters>Reset filters</button>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-art">
+      <span class="empty-orbit"></span>
+      {{ icon('activity', 30) }}
+      <span class="empty-spark">{{ icon('spark', 16) }}</span>
+    </div>
+    <p class="eyebrow">Quiet for now</p>
+    <h2>No comments handled yet</h2>
+    <p class="empty-copy">When a matching comment arrives, the public reply and DM will be recorded here with their delivery status. Try a campaign's test button to preview the log.</p>
+    <div class="empty-actions">
+      <a href="/dashboard" class="btn btn-primary">{{ icon('campaigns', 17) }} Go to campaigns</a>
+    </div>
+  </div>
+{% endif %}
+
+<div class="info-note">
+  {{ icon('shield', 18) }}
+  <p><strong>Clearing the log also clears deduplication.</strong> Comment IDs are forgotten, so the same comment could trigger a campaign again if Meta re-delivers the event.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/activity.js" defer></script>
+{% endblock %}
